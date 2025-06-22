@@ -1,5 +1,5 @@
  
-# 🚀 NATS Project (Go + Docker Compose)
+# 🚀 Distributed NATS Project (Go + Docker Compose)
 
 This project demonstrates core **NATS** features using Go and Docker Compose, including:
 
