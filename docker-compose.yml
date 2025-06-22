@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  # First NATS cluster node
+  nats1:
+    image: nats:2.10
+    command:
+      [
+        "-p", "4222",                         # Port for client connections
+        "-cluster", "nats://0.0.0.0:6222",    # Cluster port for internal node communication
+        "-routes", "nats://nats2:6222,nats://nats3:6222"  # Cluster routes
+      ]
+    ports:
+      - "4222:4222"
+    networks:
+      - natsnet
+
+  # Second NATS cluster node
+  nats2:
+    image: nats:2.10
+    command:
+      [
+        "-p", "4222",
+        "-cluster", "nats://0.0.0.0:6222",
+        "-routes", "nats://nats1:6222,nats://nats3:6222"
+      ]
+    networks:
+      - natsnet
+
+  # Third NATS cluster node
+  nats3:
+    image: nats:2.10
+    command:
+      [
+        "-p", "4222",
+        "-cluster", "nats://0.0.0.0:6222",
+        "-routes", "nats://nats1:6222,nats://nats2:6222"
+      ]
+    networks:
+      - natsnet
+
+  # Go client subscriber
+  subscriber:
+    build: .
+    command: ["./app", "-nats=nats://nats1:4222", "-role=sub"]
+    networks:
+      - natsnet
+
+  # Go client publisher
+  publisher:
+    build: .
+    command: ["./app", "-nats=nats://nats1:4222", "-role=pub"]
+    networks:
+      - natsnet
+
+  # Go client request sender
+  requester:
+    build: .
+    command: ["./app", "-nats=nats://nats1:4222", "-role=req"]
+    networks:
+      - natsnet
+
+  # Go client reply responder
+  replier:
+    build: .
+    command: ["./app", "-nats=nats://nats1:4222", "-role=rep"]
+    networks:
+      - natsnet
+
+networks:
+  natsnet:
+    name: natsnet  # Explicit name for network
